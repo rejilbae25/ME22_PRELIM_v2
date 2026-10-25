@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ME22 Prelim Reviewer — Kahoot Style</title>
+<style>
+  :root {
+    --bg: #100b24;
+    --panel: #1d1539;
+    --panel2: #2b2050;
+    --text: #f7f4ff;
+    --muted: #c3b8e5;
+    --purple: #8b5cf6;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #facc15;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #352064 0, var(--bg) 58%);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 24px;
+  }
+  .app { max-width: 900px; margin: 0 auto; }
+  header { text-align: center; margin: 8px 0 24px; }
+  .eyebrow {
+    display: inline-block; padding: 7px 12px; border-radius: 999px;
+    background: #3b2768; color: #e3d7ff; font-size: .78rem; font-weight: 800;
+    letter-spacing: .12em;
+  }
+  h1 { margin: 14px 0 8px; font-size: clamp(1.8rem, 5vw, 3rem); }
+  header p { color: var(--muted); margin: 0; line-height: 1.5; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+  .stat { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 14px; }
+  .stat-label { color: var(--muted); text-transform: uppercase; font-size: .72rem; letter-spacing: .1em; }
+  .stat-value { font-size: 1.7rem; font-weight: 900; margin-top: 5px; }
+  .progress { height: 8px; background: #382b5a; border-radius: 999px; overflow: hidden; margin: 14px 0 18px; }
+  .progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, #8b5cf6, #d946ef); transition: width .25s ease; }
+  .quiz-card { background: rgba(29,21,57,.94); border: 1px solid rgba(255,255,255,.12); border-radius: 22px; padding: clamp(18px, 4vw, 30px); box-shadow: 0 18px 60px rgba(0,0,0,.28); }
+  .round { color: #d7c7ff; text-transform: uppercase; font-size: .76rem; font-weight: 900; letter-spacing: .12em; }
+  .question { font-size: clamp(1.25rem, 3vw, 1.8rem); line-height: 1.3; margin: 13px 0 8px; }
+  .hint { color: var(--muted); font-size: .9rem; margin-bottom: 20px; }
+  .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .answer {
+    width: 100%; text-align: left; display: flex; gap: 12px; align-items: center;
+    min-height: 76px; padding: 14px; border: 2px solid transparent; border-radius: 15px;
+    background: #332650; color: var(--text); font: inherit; cursor: pointer;
+    transition: transform .12s, background .12s, border-color .12s;
+  }
+  .answer:hover:not(:disabled) { transform: translateY(-2px); background: #433267; }
+  .answer:focus-visible, .action:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
+  .letter { flex: 0 0 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,255,255,.12); font-weight: 900; }
+  .answer.correct { background: #123c2b; border-color: var(--green); color: #dcfce7; }
+  .answer.wrong { background: #451c2a; border-color: var(--red); color: #fee2e2; }
+  .answer:disabled { cursor: default; }
+  .feedback { margin-top: 18px; padding: 16px; border-radius: 14px; background: rgba(255,255,255,.07); line-height: 1.5; }
+  .feedback.good { border: 1px solid rgba(34,197,94,.6); }
+  .feedback.bad { border: 1px solid rgba(239,68,68,.6); }
+  .feedback strong { display: block; margin-bottom: 5px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+  .action { border: 0; border-radius: 12px; padding: 12px 18px; font: inherit; font-weight: 800; cursor: pointer; }
+  .primary { color: white; background: linear-gradient(135deg, #7c3aed, #a855f7); }
+  .secondary { color: var(--text); background: #3a2c5b; }
+  .action:disabled { opacity: .45; cursor: not-allowed; }
+  .result { text-align: center; padding: 12px 0; }
+  .result .emoji { font-size: 4rem; }
+  .result h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin: 8px 0; }
+  .result-score { font-size: 2.7rem; font-weight: 950; }
+  .missed { text-align: left; margin-top: 22px; }
+  .missed-item { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 13px; margin: 10px 0; }
+  .missed-item p { margin: 6px 0; line-height: 1.45; }
+  .green { color: #86efac; } .red { color: #fca5a5; }
+  .footer { text-align: center; color: var(--muted); font-size: .82rem; margin: 18px 0; }
+  @media (max-width: 620px) {
+    body { padding: 14px; }
+    .stats { gap: 8px; }
+    .stat { padding: 10px; }
+    .stat-value { font-size: 1.35rem; }
+    .answers { grid-template-columns: 1fr; }
+    .answer { min-height: 64px; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <span class="eyebrow">ME22 · PRELIM REVIEW</span>
+    <h1>🎮 Air Conditioning: Beat the Clock!</h1>
+    <p>A Kahoot-inspired, interactive reviewer based on your definitions handout.<br>Choose an answer, learn from feedback, and build your streak.</p>
+  </header>
+
+  <section class="stats" aria-label="Quiz statistics">
+    <div class="stat"><div class="stat-label">Your Score</div><div class="stat-value" id="score">0</div></div>
+    <div class="stat"><div class="stat-label">Streak 🔥</div><div class="stat-value" id="streak">0</div></div>
+    <div class="stat"><div class="stat-label">Question</div><div class="stat-value" id="question-count">1/16</div></div>
+  </section>
+
+  <div class="progress" aria-label="Quiz progress"><div class="progress-fill" id="progress-fill"></div></div>
+
+  <section class="quiz-card" id="quiz-card" aria-live="polite">
+    <div class="round" id="round"></div>
+    <h2 class="question" id="question"></h2>
+    <div class="hint">Choose ONE answer</div>
+    <div class="answers" id="answers"></div>
+    <div id="feedback-slot"></div>
+    <div class="actions" id="actions"></div>
+  </section>
+  <p class="footer">Study tip: try to explain why the correct answer is right before moving to the next question.</p>
+</main>
+
+<script>
+"use strict";
+
+const questions = [
+  { round:"ROUND 1 · WARM-UP", q:"What is air conditioning?",
+    options:["Control of temperature, humidity, air movement, and air quantity","Control of temperature only","Removal of water vapor only","Control of air pressure only"], answer:0,
+    explanation:"Air conditioning controls temperature, humidity, air movement, and air quantity in a given space." },
+  { round:"ROUND 1 · WARM-UP", q:"Moist air is a mixture of which two components?",
+    options:["Nitrogen and oxygen only","Dry air and water vapor","Water and liquid refrigerant","Oxygen and saturated air"], answer:1,
+    explanation:"Moist air is a binary mixture of dry air and water vapor." },
+  { round:"ROUND 1 · WARM-UP", q:"Which gases are identified as the non-condensing components of dry air?",
+    options:["Hydrogen and helium","Carbon dioxide and water vapor","Nitrogen and oxygen","Oxygen and steam"], answer:2,
+    explanation:"The handout defines dry air as the non-condensing component, consisting of nitrogen and oxygen." },
+  { round:"ROUND 1 · WARM-UP", q:"In the handout's definition, what is vapor?",
+    options:["The non-condensing component of air","Liquid water in a pipe","The total heat content of air","The condensable water component, saturated or superheated"], answer:3,
+    explanation:"Vapor is the condensable water component, which may be saturated or superheated." },
+  { round:"ROUND 2 · CONCEPT CLASH", q:"Air holding saturated vapor is called…",
+    options:["Unsaturated air","Saturated air","Dry air","Moisture content"], answer:1,
+    explanation:"The handout defines saturated air as air holding saturated vapor." },
+  { round:"ROUND 2 · CONCEPT CLASH", q:"According to the provided handout, air containing superheated vapor is…",
+    options:["Unsaturated air","Saturated air","Dry air","Condensate"], answer:0,
+    explanation:"This follows the handout's wording: unsaturated air contains superheated vapor." },
+  { round:"ROUND 2 · CONCEPT CLASH", q:"Which term is also called moisture content or mixing ratio?",
+    options:["Relative humidity","Enthalpy","Humidity ratio","Specific volume"], answer:2,
+    explanation:"The handout identifies humidity ratio as moisture content, specific humidity, or mixing ratio." },
+  { round:"ROUND 2 · CONCEPT CLASH", q:"Relative humidity compares which two quantities?",
+    options:["Wet-bulb and dry-bulb temperatures","Actual vapor partial pressure and saturation pressure at the current air temperature","Actual humidity ratio and saturated humidity ratio","Volume and mass of dry air"], answer:1,
+    explanation:"Relative humidity is the ratio of actual vapor partial pressure to saturation pressure at the current air temperature." },
+  { round:"ROUND 3 · ENGINEER MODE", q:"Which property means the total heat content of the mixture?",
+    options:["Specific volume","Degree of saturation","Humidity ratio","Enthalpy"], answer:3,
+    explanation:"Enthalpy is the total heat content, described as the sum of the enthalpies of dry air and water vapor." },
+  { round:"ROUND 3 · ENGINEER MODE", q:"Specific volume is measured as…",
+    options:["Kilograms of water per cubic meter","Cubic meters of mixture per kilogram of dry air","Degrees Celsius per kilogram","Pressure per unit volume"], answer:1,
+    explanation:"The handout defines specific volume as cubic meters of mixture per kilogram of dry air." },
+  { round:"ROUND 3 · ENGINEER MODE", q:"A standard thermometer is used to read which temperature?",
+    options:["Dry-bulb temperature","Wet-bulb temperature","Dewpoint temperature","Wet-bulb depression"], answer:0,
+    explanation:"Dry-bulb temperature is the air temperature read by a standard thermometer." },
+  { round:"ROUND 3 · ENGINEER MODE", q:"Which setup measures wet-bulb temperature?",
+    options:["A standard thermometer with no wick","A pressure gauge in a closed pipe","A wetted-wick thermometer exposed to rapidly moving air","A thermometer immersed in liquid water"], answer:2,
+    explanation:"Wet-bulb temperature is read by a wetted-wick thermometer exposed to rapidly moving air." },
+  { round:"ROUND 4 · TRICKY SITUATIONS", q:"Wet-bulb depression is the difference between…",
+    options:["Dewpoint and room temperature","Relative humidity and saturation pressure","Enthalpy and specific volume","Wet-bulb and dry-bulb temperatures"], answer:3,
+    explanation:"Wet-bulb depression is the difference between wet-bulb and dry-bulb temperature." },
+  { round:"ROUND 4 · TRICKY SITUATIONS", q:"Air is cooled at constant pressure until condensation begins. What temperature has been reached?",
+    options:["Dry-bulb temperature","Dewpoint temperature","Wet-bulb depression","Degree of saturation"], answer:1,
+    explanation:"Dewpoint temperature is the saturation temperature at which condensation begins when air is cooled at constant pressure." },
+  { round:"ROUND 4 · TRICKY SITUATIONS", q:"Degree of saturation is the ratio of…",
+    options:["Actual humidity ratio to the saturated-air humidity ratio at the same temperature","Actual vapor pressure to saturation pressure","Wet-bulb temperature to dry-bulb temperature","Mixture volume to total heat content"], answer:0,
+    explanation:"Degree of saturation compares actual humidity ratio with the humidity ratio of saturated air at the same temperature." },
+  { round:"FINAL BOSS · TWO-IN-ONE", q:"Which statement about the psychrometric chart matches the handout?",
+    options:["It measures only air velocity","It represents liquid-water properties only","It graphically represents the thermodynamic properties of air","It measures electrical power in an air-conditioning system"], answer:2,
+    explanation:"The handout describes psychrometrics as the study of air–water vapor mixture properties and the psychrometric chart as a graphical representation of air's thermodynamic properties." }
+];
+
+let current = 0;
+let score = 0;
+let streak = 0;
+let bestStreak = 0;
+let selected = false;
+let missed = [];
+
+const $ = id => document.getElementById(id);
+const letters = ["A", "B", "C", "D"];
+
+function renderQuestion() {
+  selected = false;
+  const item = questions[current];
+  $("round").textContent = item.round;
+  $("question").textContent = item.q;
+  $("question-count").textContent = `${current + 1}/${questions.length}`;
+  $("score").textContent = score;
+  $("streak").textContent = streak;
+  $("progress-fill").style.width = `${((current + 1) / questions.length) * 100}%`;
+  $("feedback-slot").innerHTML = "";
+  $("actions").innerHTML = "";
+  const answers = $("answers");
+  answers.innerHTML = "";
+
+  item.options.forEach((option, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "answer";
+    button.innerHTML = `<span class="letter">${letters[index]}</span><span></span>`;
+    button.querySelector("span:last-child").textContent = option;
+    button.addEventListener("click", () => chooseAnswer(index));
+    answers.appendChild(button);
+  });
+}
+
+function chooseAnswer(index) {
+  if (selected) return;
+  selected = true;
+  const item = questions[current];
+  const correct = index === item.answer;
+  const buttons = [...$("answers").querySelectorAll("button")];
+
+  buttons.forEach((button, i) => {
+    button.disabled = true;
+    if (i === item.answer) button.classList.add("correct");
+    else if (i === index) button.classList.add("wrong");
+  });
+
+  if (correct) {
+    score++;
+    streak++;
+    bestStreak = Math.max(bestStreak, streak);
+  } else {
+    streak = 0;
+    missed.push({ question: item.q, yourAnswer: item.options[index], correctAnswer: item.options[item.answer] });
+  }
+
+  $("score").textContent = score;
+  $("streak").textContent = streak;
+
+  const feedback = document.createElement("div");
+  feedback.className = `feedback ${correct ? "good" : "bad"}`;
+  const title = document.createElement("strong");
+  title.textContent = correct ? "🎉 CORRECT! +1 POINT" : "💥 NOT QUITE!";
+  const explanation = document.createElement("div");
+  explanation.textContent = item.explanation;
+  feedback.append(title, explanation);
+
+  if (!correct) {
+    const answerLine = document.createElement("p");
+    answerLine.innerHTML = "<strong>Correct answer:</strong> ";
+    answerLine.append(document.createTextNode(item.options[item.answer]));
+    feedback.appendChild(answerLine);
+  }
+  $("feedback-slot").appendChild(feedback);
+
+  const next = document.createElement("button");
+  next.className = "action primary";
+  next.type = "button";
+  next.textContent = current === questions.length - 1 ? "See Final Results →" : "Next Question →";
+  next.addEventListener("click", () => {
+    if (current === questions.length - 1) showResults();
+    else { current++; renderQuestion(); }
+  });
+  $("actions").appendChild(next);
+}
+
+function showResults() {
+  $("question-count").textContent = `${questions.length}/${questions.length}`;
+  $("progress-fill").style.width = "100%";
+  $("quiz-card").innerHTML = "";
+  const result = document.createElement("div");
+  result.className = "result";
+
+  const percent = Math.round((score / questions.length) * 100);
+  let emoji = "🎓", rank = "TRAINING ROUND COMPLETE!", message = "Keep practicing. Repetition will help you remember each definition.";
+  if (score >= 14) { emoji = "🏆"; rank = "PSYCHROMETRIC CHAMPION!"; message = "Excellent! You're ready for a tougher round."; }
+  else if (score >= 10) { emoji = "🥇"; rank = "SOLID PERFORMANCE!"; message = "Good job! Review the definitions you missed and try again."; }
+
+  result.innerHTML = `<div class="emoji">${emoji}</div><h2>${rank}</h2><div class="result-score">${score} / ${questions.length}</div><p>${percent}% correct</p><p>${message}</p><p>Best streak: <strong>${bestStreak}</strong> ${bestStreak === 1 ? "answer" : "answers"} in a row.</p>`;
+  const restart = document.createElement("button");
+  restart.className = "action primary";
+  restart.textContent = "↻ Play Again";
+  restart.addEventListener("click", resetQuiz);
+  result.appendChild(restart);
+
+  if (missed.length) {
+    const review = document.createElement("div");
+    review.className = "missed";
+    const heading = document.createElement("h3");
+    heading.textContent = "🧠 Your Mistake Review";
+    review.appendChild(heading);
+    missed.forEach((item, i) => {
+      const card = document.createElement("div");
+      card.className = "missed-item";
+      const q = document.createElement("p");
+      q.innerHTML = `<strong>${i + 1}. </strong>`;
+      q.append(document.createTextNode(item.question));
+      const yours = document.createElement("p");
+      yours.className = "red";
+      yours.textContent = `Your answer: ${item.yourAnswer}`;
+      const correct = document.createElement("p");
+      correct.className = "green";
+      correct.textContent = `Correct: ${item.correctAnswer}`;
+      card.append(q, yours, correct);
+      review.appendChild(card);
+    });
+    result.appendChild(review);
+  } else {
+    const perfect = document.createElement("p");
+    perfect.className = "green";
+    perfect.textContent = "Perfect run! You answered every question correctly.";
+    result.appendChild(perfect);
+  }
+  $("quiz-card").appendChild(result);
+  $("score").textContent = score;
+  $("streak").textContent = streak;
+}
+
+function resetQuiz() {
+  current = 0; score = 0; streak = 0; bestStreak = 0; selected = false; missed = [];
+  $("quiz-card").innerHTML = `
+    <div class="round" id="round"></div>
+    <h2 class="question" id="question"></h2>
+    <div class="hint">Choose ONE answer</div>
+    <div class="answers" id="answers"></div>
+    <div id="feedback-slot"></div>
+    <div class="actions" id="actions"></div>`;
+  renderQuestion();
+}
+
+renderQuestion();
+</script>
+</body>
+</html>
